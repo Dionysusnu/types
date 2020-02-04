@@ -452,7 +452,7 @@ interface MarketplaceService extends Instance {
 
 interface Model extends PVInstance {
 	PrimaryPart: BasePart | undefined;
-	GetBoundingBox(this: Model): LuaTuple<[CFrame, Vector3]>;
+	GetBoundingBox(this: Modeling): LuaTuple<[CFrame, Vector3]>;
 }
 
 /** @rbxts server */
@@ -563,7 +563,8 @@ interface Players extends Instance {
 	readonly LocalPlayer: Player;
 	GetPlayerByUserId(this: Players, userId: number): Player | undefined;
 
-	GetPlayerFromCharacter(this: Players, character: Instance | undefined): Player | undefined;
+	GetPlayerFromCharacter(character: Model): Player | undefined;
+	GetPlayerFromCharacter(character: any): undefined;
 	GetPlayers(this: Players): Array<Player>;
 
 	GetCharacterAppearanceAsync(this: Players, userId: number): Model | undefined;
