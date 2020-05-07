@@ -731,6 +731,16 @@ interface ReadonlyMap<K, V> extends Iterable<[K, V]> {
 	forEach(this: ReadonlyMap<K, V>, callbackfn: (value: V, key: K, self: this) => void): void;
 
 	/**
+	 * Returns whether **all** the members of a Map satisfy the specified test.
+	 * Returns true for empty Maps.
+	 * @param callbackfn A function that accepts up to three arguments. The every method calls the callbackfn function for each pair of elements in the Map until the callbackfn returns false, or until the end of the Map.
+	 */
+	every(
+		this: ReadonlyMap<K, V>,
+		callbackfn: (value: V, key: K, array: ReadonlyMap<K,V>) => boolean | undefined,
+	): boolean;
+
+	/**
 	 * Returns the number of elements in the Map
 	 */
 	size(this: ReadonlyMap<K, V>): number;
@@ -844,6 +854,16 @@ interface ReadonlySet<T> extends Iterable<T> {
 	 * @param callbackfn  A function that accepts up to three arguments. forEach calls the callbackfn function one time for each (element / pair of elements) in the array.
 	 */
 	forEach(this: ReadonlySet<T>, callbackfn: (value: T, value2: T, self: ReadonlySet<T>) => void): void;
+
+	/**
+	 * Returns whether **all** the members of a Set satisfy the specified test.
+	 * Returns true for empty Sets.
+	 * @param callbackfn A function that accepts up to two arguments. The every method calls the callbackfn function for each element in the Set until the callbackfn returns false, or until the end of the Set.
+	 */
+	every(
+		this: ReadonlySet<defined>,
+		callbackfn: (value: T, array: ReadonlySet<T>) => boolean | undefined,
+	): boolean;
 
 	/**
 	 * Returns the number of elements in the set
