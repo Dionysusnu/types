@@ -158,99 +158,10 @@ const PLUGIN_ONLY_CLASSES = new Set([
 	"VersionControlService",
 ]);
 
-const CLASS_BLACKLIST = new Set([
-	// Classes which Roblox leverages internally/in the CoreScripts but serve no purpose to developers
-	"AnalysticsSettings",
-	"BinaryStringValue",
-	"BrowserService",
-	"CacheableContentProvider",
-	"ClusterPacketCache",
-	"CookiesService",
-	"CorePackages",
-	"CoreScript",
-	"CoreScriptSyncService",
-	"DraftsService",
-	"FlagStandService",
-	"FlyweightService",
-	"FriendService",
-	"GamepadService",
-	"Geometry",
-	"GoogleAnalyticsConfiguration",
-	"GuidRegistryService",
-	"HttpRbxApiService",
-	"HttpRequest",
-	"KeyboardService",
-	"LocalStorageService",
-	"LuaWebService",
-	"MemStorageService",
-	"MouseService",
-	"PartOperationAsset",
-	"PermissionsService",
-	"PhysicsPacketCache",
-	"PlayerEmulatorService",
-	"ReflectionMetadataItem",
-	"RobloxReplicatedStorage",
-	"RuntimeScriptService",
-	"SpawnerService",
-	"StandalonePluginScripts",
-	"StopWatchReporter",
-	"ThirdPartyUserService",
-	"TimerService",
-	"TouchInputService",
-	"VirtualInputManager",
-	"Visit",
+const CLASS_BLACKLIST = new Set<string>([]);
 
-	// never implemented
-	"AdvancedDragger",
-	"LoginService",
-	"NotificationService",
-	"ScriptService",
-	"Status",
-
-	// super deprecated:
-	"AdService",
-	"FunctionalTest",
-	"PluginManager",
-	"VirtualUser",
-
-	// "BevelMesh",
-	"CustomEvent",
-	"CustomEventReceiver",
-	// "CylinderMesh",
-	// "DoubleConstrainedValue",
-	"Flag",
-	"FlagStand",
-	// "FloorWire",
-	// "Glue",
-	"GuiMain",
-	// "Hat",
-	"Hint",
-	// "Hole",
-	"Hopper",
-	"HopperBin",
-	// "IntConstrainedValue",
-	// "JointsService",
-	"Message",
-	// "MotorFeature",
-	"PointsService",
-	// "SelectionPartLasso",
-	// "SelectionPointLasso",
-	// "SkateboardPlatform",
-	"Skin",
-
-	"ReflectionMetadata",
-	"ReflectionMetadataCallbacks",
-	"ReflectionMetadataClasses",
-	"ReflectionMetadataEnums",
-	"ReflectionMetadataEvents",
-	"ReflectionMetadataFunctions",
-	"ReflectionMetadataProperties",
-	"ReflectionMetadataYieldFunctions",
-
-	// unused
-	"UGCValidationService",
-	"RbxAnalyticsService",
-]);
+const GENERIC_SUPERCLASSES = new Set(["Pages"]);
+const USEFUL_NO_MEMBER_CLASSES = new Set(["ServerScriptService"]);
 
 const MEMBER_BLACKLIST = new Map([
 	["Workspace", new Set(["FilteringEnabled"])],
@@ -1049,11 +960,10 @@ export class ClassGenerator extends Generator {
 		}
 	}
 
-	private shouldGenerateClass(rbxClass: ApiClass) {
+	private shouldGenerateClass(rbxClass: ApiClass, skipUsefulnessChecks = false) {
 		const superclass = this.ClassReferences.get(rbxClass.Superclass);
-
 		if (superclass) {
-			if (!this.shouldGenerateClass(superclass)) {
+			if (!this.shouldGenerateClass(superclass, true)) {
 				return false;
 			}
 		}
@@ -1062,13 +972,36 @@ export class ClassGenerator extends Generator {
 			return false;
 		}
 
-		if (this.security !== "PluginSecurity") {
-			if (PLUGIN_ONLY_CLASSES.has(rbxClass.Name)) {
-				return false;
-			}
+		if (this.security !== "PluginSecurity" && PLUGIN_ONLY_CLASSES.has(rbxClass.Name)) {
+			return false;
 		}
 
-		return true;
+		if (GENERIC_SUPERCLASSES.has(rbxClass.Superclass)) {
+			skipUsefulnessChecks = true;
+		}
+
+		const subclasses = this.ClassReferences.get(rbxClass.Name)!.Subclasses;
+		if (
+			!skipUsefulnessChecks &&
+			subclasses.some(subClass => this.shouldGenerateClass(this.ClassReferences.get(subClass)!))
+		) {
+			return true;
+		}
+
+		if (skipUsefulnessChecks || USEFUL_NO_MEMBER_CLASSES.has(rbxClass.Name)) {
+			return true;
+		}
+		if (!hasTag(rbxClass, "NotCreatable")) {
+			return true;
+		}
+		if (rbxClass.Members.length === 0) {
+			// Assume that empty classes exist for a reason, eg ServerStorage
+			return true;
+		}
+		if (rbxClass.Members.some(m => this.shouldGenerateMember(rbxClass, m))) {
+			return true;
+		}
+		return false;
 	}
 
 	private shouldGenerateMember(rbxClass: ApiClass, rbxMember: ApiMember) {
