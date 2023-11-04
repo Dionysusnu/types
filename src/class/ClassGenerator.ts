@@ -951,6 +951,12 @@ export class ClassGenerator extends Generator {
 		// Already covered by TS readonly modifier
 		if (readonlyIndex !== -1) tags.splice(readonlyIndex, 1);
 
+		const hiddenIndex = tags.indexOf("Hidden");
+		if (hiddenIndex !== -1) {
+			tags.splice(hiddenIndex, 1);
+			tagModifiers.push("@hidden");
+		}
+
 		let deprecationMessage = "@deprecated";
 		const deprecatedIndex = tags.indexOf("Deprecated");
 		// Splice removes the tag from array to avoid duplication
